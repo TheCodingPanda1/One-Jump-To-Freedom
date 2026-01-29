@@ -41,18 +41,18 @@ function Block(colour, action = NaN){
     }
 }
 var a = new Block("transparent");
-var g = new Block("/grass-block.png", "collide");
-var d = new Block("/dirt-block.png", "collide");
-var l = new Block("/lava.png", "kill");
-var e = new Block("/finish.png", "win");
-var c = new Block("/unchecked-checkpoint.png", "checkpoint");
-var cc = new Block("/checked-checkpoint.png");
-var ub = new Block("/unchecked-jump.png", "addjump");
-var cb = new Block("/checked-jump.png");
-var ua = new Block("/unchecked-airjump.png", "addairjump");
-var ca = new Block("/checked-airjump.png");
-var s = new Block("/star.png", "addstar");
-var cs = new Block("/checked-star.png");
+var g = new Block("../grass-block.png", "collide");
+var d = new Block("../dirt-block.png", "collide");
+var l = new Block("../lava.png", "kill");
+var e = new Block("../finish.png", "win");
+var c = new Block("../unchecked-checkpoint.png", "checkpoint");
+var cc = new Block("../checked-checkpoint.png");
+var ub = new Block("../unchecked-jump.png", "addjump");
+var cb = new Block("../checked-jump.png");
+var ua = new Block("../unchecked-airjump.png", "addairjump");
+var ca = new Block("../checked-airjump.png");
+var s = new Block("../star.png", "addstar");
+var cs = new Block("../checked-star.png");
 
 var levels = [
     [
