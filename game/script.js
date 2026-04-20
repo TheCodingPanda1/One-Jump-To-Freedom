@@ -1,3 +1,4 @@
+var root = document.documentElement;
 var jumps = 10;
 var airJumps = 0;
 var jumpCounter = document.getElementById("numberOfJumps");
@@ -13,16 +14,18 @@ var gravity = 1.5;
 var r = "red";
 var airjumpable = true;
 var keys = [];
-var level = 0;
+var level = 3;
 var onblock = false;
 var blocks = [];
 var spawnX;
 var spawnY;
+var dead = false;
 var levelStars = 0;
 var won = false;
 var stars = 0;
 var levelJumps = 0;
 var levelAirJumps = 0;
+var fallingPlatform = document.getElementById("fallingPlatform");
 function Block(colour, action = NaN){
     this.colour = colour;
     this.action = action;
@@ -30,9 +33,11 @@ function Block(colour, action = NaN){
     this.place = function(bx, by){
         let image = new Image();
         image.src = this.colour;
+        this.image = image;
         image.onload = function(){
             ctx.drawImage(image, bx, by, 50, 50);
         }
+        
         blocks[blocks.length] = {
             x: bx,
             y: by,
@@ -43,7 +48,6 @@ function Block(colour, action = NaN){
 var a = new Block("transparent");
 var g = new Block("../grass-block.png", "collide");
 var d = new Block("../dirt-block.png", "collide");
-var l = new Block("../lava.png", "kill");
 var e = new Block("../finish.png", "win");
 var c = new Block("../unchecked-checkpoint.png", "checkpoint");
 var cc = new Block("../checked-checkpoint.png");
@@ -53,107 +57,101 @@ var ua = new Block("../unchecked-airjump.png", "addairjump");
 var ca = new Block("../checked-airjump.png");
 var s = new Block("../star.png", "addstar");
 var cs = new Block("../checked-star.png");
+var sss = new Block("../Spike.png", "kill");
+var ccc = new Block("../Collapsing.png", "collapse");
 
 var levels = [
     [
-        2,
-        3,
-        1,
-        1,
-        "aaaaaaaaaae",
-        "aaaaaaggggg",
-        "ggggggddddd",
-        "aadddddddaa",
-        "aaadddddaaa",
-        "aaaaaaddaaa",
-        "aaaaasdaaaa",
-        "aaaadddaaaa",
-        "aaaadddaaaa",
-        "aaaaadaaaaa",
-        "aaaaadaaaaa",
-        "aaaaadaaaaa"
+        7,
+        0,
+        0,
+        11,
+        "aaaaaaaaaagggaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaag",
+        "aaagggaaaaaddaaaaaaaaaaaaaaaaaaajaaaajaaaajaaaaaad",
+        "aaaaaaaaaaadaaaaaaaacaaajggggggggaaaggaaaggaaagaad",
+        "aaaaaaaaaaadaaaaaaaggggggdddddaaaaaaaaaaaaaaaaddad",
+        "aaaaaaaaaaaaaaaaaaaaadddddddaaaaaaaaaaaaaaaaaadaad",
+        "aaaaaaaaaaaaaaaaaaaaaadddddaaaaaaaaaaaaaaaaaaadadd",
+        "aaaaaaaaaaaaaaaaaaaaaaaddddaaaaaaaaaaaaaaaaaaadadd",
+        "aaaaaaaaaggggaaaaaaaaaadddaaaaaaaaaaaaaaaaaaaadaad",
+        "aaagggaaadddaaaaaaaaaaadddaaaaaaaaaaaaaaaaaaaaddad",
+        "aaaaddaaaddaaaaaaaaaaaaaddaaaaaaaaaaaaaaaaaaaadaadaaaaaaaaaaaaaaaaaaaaaaaae",
+        "aaaadaaaaadaaaaaaaaaaaaadaaaaaaaaaaaaaaaaaaaaadaddaaaaaaaaaaaaaaaaaaaaaaggggg",
+        "aaaadaaaaadaaaaaaaaaaaaaadaaaaaaaaaaaaaaafsffadcfaaaaaaaaafaaaaaaaaajaggd",
+        "gaaaaaaaaaaaaaaaaaaaaaaaadaaaaaaaaaaaaaaaggggadgggaaaaaagggaaaaaaaagggd",
     ],
     [
         1,
         1,
         1,
-        18,
-        "aaasaaaaaaaaaaa",
-        "aggggaaaaaaaaaa",
-        "aaaaaaaaaaaaaaa",
-        "aaaaaaaaaaaaaaa",
-        "aaaaaaaaaaaaaaa",
-        "afaaaaaaaaaaaaa",
-        "aaaaaaaaaaaaaaa",
-        "aaaaaaaaaaaaaaa",
-        "aaaaaaaaaaaaaaa",
-        "aaaaaaaaaaaaaaa",
-        "aaaaaaaaaaaaaaa",
-        "aafaaaaaaaaaaaa",
-        "aaaaaaaaaaaaaaa",
-        "aaaaaaaaaaaaaaa",
-        "aaaaaaaaaaaaaaa",
-        "aaaaaaaaaaaaaaa",
-        "jaaggggaaaaaaaa",
-        "gggdaaaaaaaaaae",
-        "daaaaaaaaaggggg",
-        "dggggaaaaaddddd",
-        "adddaaaaaaaddaa",
-        "adddaaaaaaaadaa",
-        "aaddaaaaaaaadaa",
-        "aadaaaaaaaaaaaa",
-        "aadaaaaaaaaaaaa"
+        8,
+        "aaaaaaaaaaaaaggaaaaaaaaaaaaaaaaaaaaaaaajaaaaaaac",
+        "aaaaaaaaaaaafaaaaaaaaaaaaaaaaaaaaaaaaaaggaaaagggggfaaaaaaaajataaaaajttaaajattaaaacjattttj",
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaddaaaaaddddaaaaaaaaggggaaaaggggaaaggggaaagggggggggtttttae",
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaadaaaaaadddaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaadggggggg",
+        "aaaaaaaaaaaafaaaaaaaaaaaaaaaaaaaaaaaaaadaaaaaaddd",
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaajaaaaaaadd",
+        "aaaggggaaaaaaaaaaaaaaaaaaaaaaaafaaaaaagggaaaaaad",
+        "gggdaaaaaaaajaaaaaaacaaaaaaaaggaaaaaaadddaaaaaad",
+        "daaaaaaaaagggttttttggggaaaaaaaaaaaaaaadddaaaaaad",
+        "dggggaaaaadddggggggdddaaaaaaaaaaaaaaaaadd",
+        "adddaaaaaaadddddddddddaaaaaaaaaaaaaaaaad",
+        "adddaaaaaaadaaaaaaaddaaaaaaaaaaaaaaaaaad",
+        "aaddaaaaaaadaaaaaaaad",
+        "aadaaaaaaaaaaaaaaaaadaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaafsf",
+        "aadaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaggg",
     ],
     [
         4,
         0,
         0,
-        0,
-        "aaaaaaaaaaaaaa",
-        "glllglllglllge",
-        "dddddddddddddg",
-        "adddddddddddaa",
-        "addddddddddaaa",
-        "aadddddddddaaa",
-        "aaadddddddaaaa",
-        "aaaaaafdddaaaa",
-        "aaaaaddaaaaaa",
-        "aaaaddddaaaaaa",
-        "aaaaddddaaaaaa",
-        "aaasaffffffaaa",
-        "aaaaaddddddddd",
-        "aaaaadaaaaaaaa",
-        "aaaaadaaaaaaaa",
-        "aaaaadaaaaaaaa",
-        "aaaaadaaaaaaaa"
+        18,
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaajtaaaacj",
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaggaaagggaaaaaaj",
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabbaaaaaaf",
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabbaaaaaaaaaeaaaaaaaas",
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaggaaafaaaggg",
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaj",
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaagg",
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaacj",
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaagg",
+        "aaaaaaaaaaaggggggaaaa",
+        "gggggggggggdaaaaaaaaa",
+        "aaaaaaaaaaaaaaaaaaaaa",
+        "aaaaaaaaaaaaaaaaaaaaa",
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaattaaaaajj",
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaggabbbbggg",
+        "aataataataaaataaaaaaaaaaaaaaaaaaaaaaaaaaaaj",
+        "ggggggggggggggaaaaaajaaaacjaajaajaaafaaaajcj",
+        "aaaaaaaaaaaaadgggbbbbaaagggaabaabaaabaaaaggg",
+        "aaaaaaaaaaaaaaaaaaaaa",
+        "aaaaaaaaaaaaaaaaaaaaa",
+        "aaaaaaaaaaaaaaaaaaaaa",
+        "aaaaaaaaaaaaaaaaaaaaa",
+        "aaaaaaaaaaaaaaaaaaaaa",
+        "aaaaaaaaaaaaaaaaaaaaa",
     ],
     [
         5,
         3,
         0,
         3,
-        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaacaaaaaaaaaaaaaaaae",
-        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaggaaaaaaaaaaaaaaagg",
-        "aaaaaaaaaaaaaaaaaaaaagaaaaaaaaaadaaaaaaaaaaaaaaad",
-        "aaaaaaaaagaaaaaaaaaaaaaaaaaaaaaadaaaaaaaaaaaaaaad",
-        "gaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaadaaaaaaaaaaaaaafd",
-        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaadaaaaaaaaaaaaaaad",
-        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaadaaaaaaaaaaaaaaad",
-        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaadaaaaaaaaaaaaaaad",
-        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaadaaaaaaaaaaaaaaad",
-        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaadaaaaaaaaaaaaaaad",
-        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaadaaaaaaaaaaaaaajd",
-        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaadggglllggglllgggd",
-        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaddddddddddddddddd",
-        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaadaaaaaaaaaaaaaa",
-        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaadaaaaaaaaaaaaaa",
-        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaadaaaaaaaaaaaaaa",
-        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaadaaaaaaaaaaaaaa",
-        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaadaaaaaaaaaaaaaa",
-        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaadaaaaaaaaaaaaaa",
-        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaffffaaasaaaa",
-        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaafaagaagggggggaaaaa",
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaacaaaaaaaaaaaaaaaajaaaaajaaaaajaaaaafaaaaaaaacaag",
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaggaaaaaaaaaaaaaaaggaaaaabaaaaabaaaaabaaaaaaagggadaaaaaaaaajaaaaaaac",
+        "aaaaaaaaaaaaaaaaaaaaagaaaaaaaaaadaaaaaaaaaaaaaaadaaaaaaaaaaaaaaaaaaaaaaaaaaaadadaaaaaaaabbbaaaaaggg",
+        "aaaaaaaaagaaaaaaaaaaaaaaaaaaaaaadaaaaaaaaaaaaaaadaaaaaaaaaaaaaaaaaaaaaaaaaaaadad",
+        "gaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaadaaaaaaaaaaaaaafdaaaaaaaaaaaaaaaaaaaaaaaaaaaadad",
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaadaaaaaaaaaaaaaaadaaaaaaaaaaaaaaaaaaaaaaaaaaaadad",
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaadaaaaaaaaaaaaaaadaaaaaaaaaaaaaaaaaaaaaaaaaaaadadaaaaaaaaaj",
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaadaaaaaaaaaaaaaaadaaaaaaaaaaaaaaaaaaaaaaaaaaaadadaaaaaaaabbb",
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaadaaaaaaaaaaaaaaadaaaaaaaaaaaaaaaaaaaaaaaaaaaadad",
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaadaaaaaaaaaaaaaaadaaaaaaaaaaaaaaaaaaaaaaaaaaaadad",
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaadaaaaaaaaaaaaaajdaaaaaaaaaaaaaaaaaaaaaaaaaaaadad",
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaadgggtttgggtttgggdaaaaaaaaaaaaaaaaaaaaaaaaaaaadafaaaaaaaaaj",
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaddddgggdddgggddddaaaaaaaaaaaaaaaaaaaaaaaaaaaadggaaaaaaaabbb",
     ],
     [
         1,
@@ -166,31 +164,40 @@ var levels = [
         "aaaadaaaaaaaaaaaaaaaaaadaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaagd",
         "aaaadgaaaaaaaaaaaaaaaaadaaaaaaaaaaaaaaaaaaaaaaaaaeaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaagddggg",
         "aaaaddggaaaagggggggajaadaaaaaaaaaaaaaaaaaaaaaaaagggaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaadd",
-        "aaaaddddggggdaaaaadgggjdaaaaaaaaaaaaaaaaaaaaaaaaadaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaad",
-        "aaaaaddaaaaffaaaaaaaaddd",
-        "aaaaaadaaaaaaaaaaaaaaadd",
-        "glllgajaaaaaaaaacaaaggddaaaaaaaaaaaaaaaaaaaf",
-        "dddddgggglllllgggggadaad",
-        "aaaaaaaadddddddaaaaaaaad",
+        "aaaaadddggggdaaaaadgggjdaaaaaaaaaaaaaaaaaaaaaaaaadaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaad",
+        "aaaaaddaaaaaaaaaaaaaaddd",
+        "aaaaaadaaafafaaaaaaaaadd",
+        "gtttgajaaaaaaaaacaaaggddaaaaaaaaaaaaaaaaaaaf",
+        "dgggdggggtttttgggggaaaad",
+        "aaaaaaaadgggggdaaaaaaaad",
         "aaaaaaaaaaaaaaaaaaaaaaad",
         "aaaaaaaaaaaaaaaaaaaaaaadaaaaaaaaaaaaaaj",
-        "aaaaaaaaaaaaaaaaaaaaaagdaaaaaaaaaaaaaggg",
-        "aaaaaaaaaaaaaaaaaaaaaaddaaaaaaaaaaaaaad",
-        "aaaaaaaaaaaaaaaaaaaaaadd",
-        "aaaaaaaaaaaaaaaaaaaaaadd",
-        "aaaaaaaaaaaaaaaaaaaaaadd",
-        "aaaaaaaaaaaaaaaaaaaaaadd",
+        "aaaaaaaaaaaaaaaaaaaaaaadaaaaaaaaaaaaaggg",
+        "aaaaaaaaaaaaaaaaaaaaaaadaaaaaaaaaaaaaad",
+        "aaaaaaaaaaaaaaaaaaaaaaad",
+        "aaaaaaaaaaaaaaaaaaaaaaad",
+        "aaaaaaaaaaaaaaaaaaaaaaad",
+        "aaaaaaaaaaaaaaaaaaaaaagd",
         "aaaaaaafaaaaaaaaaaafaadd",
         "aaaaaaaaaaaaafaaaaaaaaddaaaaaaaaaaaaa",
         "aaaaaaaaaaaaaaaaaaaaaaddaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaag",
-        "aaaaglllllgaaaaaglllllddaaaaaaaaaaaaaaaaaaaaaaaajfaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaagdg",
-        "aaaadddddddllllldddddddaaaaaaaaaaaaaaaaaaaaaaaaagggaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaagdddg",
-        "aaaaaaaajfdddddddaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaadaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaad",
+        "aaaagtttttgaaaaagtttttddaaaaaaaaaaaaaaaaaaaaaaaajfaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaagdg",
+        "aaaadgggggdtttttdgggggdaaaaaaaaaaaaaaaaaaaaaaaaagggaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaagdddg",
+        "aaaaaaaajfdgggggdaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaadaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaad",
         "aaaaaacaaaaaaaaaaaaaaaaaaaaaaaaaaajfaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaasfffffffffffffffad",
-        "aaaaggggaaaaaaaaaajgggggaaaaaaaagggggaaaaaaaaaaaaaaaaaaaaaaaaafaaaaaafaaaaaafaaaaafaaaaagggggggggggggggggd",
-        "aaaaddddgggggggggggdddd"
-    ]
-    
+        "aaaaggggaaaaaaaaaajgggggaaaaaaaagggggaaaaaaaaaaaaaaaaaaaaaaaaafafafafafafafafafafafafaaaagggggggggggggggggd",
+        "aaaaddddgggggggggggdddd",
+    ],
+    [
+        4,
+        0,
+        0,
+        2,
+        "aaaaaaaaaaaaaaaaaag",
+        "aaaaaaaaaaaag",
+        "aaaaaag",
+        "gaaaaaaaaaaaaaaaaah",
+    ],
 ];
 function resizeGame(){
     let largest = 0;
@@ -215,35 +222,35 @@ document.addEventListener("keydown", function(e){
     }
 });
 document.addEventListener("keydown", function(e){
-    if(e.key == "ArrowRight" && !won){
+    if(e.key == "ArrowRight" && !won && !dead){
         keys[1] = true;
         document.getElementById("player").style.scale = "1 1";
     }
 });
 document.addEventListener("keydown", function(e){
-    if(e.key == "ArrowUp" && !won){
+    if(e.key == "ArrowUp" && !won && !dead){
         keys[2] = true;
         checkCollision();
     }
 });
 document.addEventListener("keyup", function(e){
-    if(e.key == "ArrowLeft" && !won){
+    if(e.key == "ArrowLeft" && !won && !dead){
         keys[0] = false;
     }
 });
 document.addEventListener("keyup", function(e){
-    if(e.key == "ArrowRight" && !won){
+    if(e.key == "ArrowRight" && !won && !dead){
         keys[1] = false;
     }
 });
 document.addEventListener("keyup", function(e){
-    if(e.key == "ArrowUp" && !won){
+    if(e.key == "ArrowUp" && !won && !dead){
         keys[2] = false;
         airjumpable = true;
     }
 });
 document.addEventListener("keydown", function(e){
-    if(e.key == "r" && !won){
+    if(e.key == "r" && !won && !dead){
         if(x / 50 == spawnX && y / 50 == spawnY){
             spawnX = levels[level][2];
             spawnY = levels[level][3] + 4;
@@ -255,6 +262,9 @@ document.addEventListener("keydown", function(e){
     }
 });
 function setLevel(){
+    gravity = 1.5;
+    player.style.animation = "none";
+    dead = false;
     ctx.clearRect(0, 0, game.width, game.height);
     levelStars = 0;
     game.innerHTML = "";
@@ -263,8 +273,10 @@ function setLevel(){
     airJumps = levelAirJumps;
     setJumps();
     x = spawnX*50;
-    y = spawnY*50 ;
-    console.log(spawnY);
+    y = spawnY*50;
+    keys = [false, false, false];
+    sx = 0;
+    sy = 0;
     for(var i = 4; i < levels[level].length; i ++){
         for(var j = 0; j < levels[level][i].length; j ++){
             if(levels[level][i][j] == "g"){
@@ -295,6 +307,12 @@ function setLevel(){
             if(levels[level][i][j] == "s"){
                 s.place(j*50, i*50);
             }
+            if(levels[level][i][j] == "t"){
+                sss.place(j*50, i*50);
+            }
+            if(levels[level][i][j] == "b"){
+                ccc.place(j*50, i*50);
+            }
         }
     }
 }
@@ -311,7 +329,7 @@ function checkCollision(){
                 y = blocks[i].y - 50;
                 sy = 0;
                 onblock = true;
-                airjumpable = true;    
+                airjumpable = true;
             }
             if(x + 50 > blocks[i].x - sx + 1 && x + 50 < blocks[i].x + sx + 1 && y < blocks[i].y + 50 && y + 50 > blocks[i].y){
                 x = blocks[i].x - 50;
@@ -326,9 +344,128 @@ function checkCollision(){
                 y = blocks[i].y + 50;
             }
         }
-        if(blocks[i].action == "kill"){
+        if (blocks[i].action == "collapse") {
+            if (
+                x + 50 > blocks[i].x + 1 &&
+                x < blocks[i].x + 49 &&
+                y + 50 > blocks[i].y - 10 &&
+                y + 50 < blocks[i].y + sy + 1
+            ) {
+                y = blocks[i].y - 50;
+                sy = 0;
+                onblock = true;
+                airjumpable = true;
+                ctx.clearRect(blocks[i].x, blocks[i].y, 50, 50);
+                let currentPlatform = fallingPlatform.cloneNode(true);
+                blocks[i].action = "collide";
+                document.body.appendChild(currentPlatform);
+                currentPlatform.style.left = blocks[i].x + "px";
+                currentPlatform.style.top = blocks[i].y + "px";
+                currentPlatform.style.display = "block";
+                currentPlatform.style.animation = "collapse 1s ease-out forwards";
+                let num = i;
+                console.log(blocks[i]);
+                setTimeout(() => {
+                    blocks[num].action = NaN;
+                }, 900);
+                setTimeout(function () {
+                    currentPlatform.style.animation = "none";
+                    currentPlatform.style.display = "none";
+                }, 1000);
+            }
+            if (
+                x + 50 > blocks[i].x - sx + 1 &&
+                x + 50 < blocks[i].x + sx + 1 &&
+                y < blocks[i].y + 50 &&
+                y + 50 > blocks[i].y
+            ) {
+                x = blocks[i].x - 50;
+                sx = 0;
+                ctx.clearRect(blocks[i].x, blocks[i].y, 50, 50);
+                let currentPlatform = fallingPlatform.cloneNode(true);
+                blocks[i].action = "collide";
+                document.body.appendChild(currentPlatform);
+                currentPlatform.style.left = blocks[i].x + "px";
+                currentPlatform.style.top = blocks[i].y + "px";
+                currentPlatform.style.display = "block";
+                currentPlatform.style.animation =
+                    "collapse 1s ease-out forwards";
+                let num = i;
+                console.log(blocks[i]);
+                setTimeout(() => {
+                    blocks[num].action = NaN;
+                }, 900);
+                setTimeout(function () {
+                    currentPlatform.style.animation = "none";
+                    currentPlatform.style.display = "none";
+                }, 1000);
+            }
+            if (
+                x < blocks[i].x + 50 - sx - 1 &&
+                x > blocks[i].x + 50 + sx - 1 &&
+                y < blocks[i].y + 50 &&
+                y + 50 > blocks[i].y
+            ) {
+                x = blocks[i].x + 50;
+                sx = 0;
+                ctx.clearRect(blocks[i].x, blocks[i].y, 50, 50);
+                let currentPlatform = fallingPlatform.cloneNode(true);
+                blocks[i].action = "collide";
+                document.body.appendChild(currentPlatform);
+                currentPlatform.style.left = blocks[i].x + "px";
+                currentPlatform.style.top = blocks[i].y + "px";
+                currentPlatform.style.display = "block";
+                currentPlatform.style.animation =
+                    "collapse 1s ease-out forwards";
+                let num = i;
+                console.log(blocks[i]);
+                setTimeout(() => {
+                    blocks[num].action = NaN;
+                }, 900);
+                setTimeout(function () {
+                    currentPlatform.style.animation = "none";
+                    currentPlatform.style.display = "none";
+                }, 1000);
+            }
+            if (
+                x + 50 > blocks[i].x + 1 &&
+                x < blocks[i].x + 49 &&
+                y > blocks[i].y + 50 + sy - 2 &&
+                y < blocks[i].y + 50 - sy - 1
+            ) {
+                sy = 0;
+                y = blocks[i].y + 50;
+                ctx.clearRect(blocks[i].x, blocks[i].y, 50, 50);
+                let currentPlatform = fallingPlatform.cloneNode(true);
+                blocks[i].action = "collide";
+                document.body.appendChild(currentPlatform);
+                currentPlatform.style.left = blocks[i].x + "px";
+                currentPlatform.style.top = blocks[i].y + "px";
+                currentPlatform.style.display = "block";
+                currentPlatform.style.animation =
+                    "collapse 1s ease-out forwards";
+                let num = i;
+                console.log(blocks[i]);
+                setTimeout(() => {
+                    blocks[num].action = NaN;
+                }, 900);
+                setTimeout(function () {
+                    currentPlatform.style.animation = "none";
+                    currentPlatform.style.display = "none";
+                }, 1000);
+            }
+        }
+        if(blocks[i].action == "kill" && !dead){
             if(x < blocks[i].x + 50 && x + 50 > blocks[i].x && y < blocks[i].y + 50 && y + 50 > blocks[i].y){
-                setLevel();
+                setTimeout(function(){
+                    setLevel();
+                }, 1000);
+                dead = true;
+                gravity = 0;
+                sx = 0;
+                sy = 0;
+                keys = [false, false, false];
+                player.style.animation = "death 1s ease-out";
             }
         }
         if(blocks[i].action == "win"){
@@ -374,6 +511,9 @@ function checkCollision(){
         }
         if(blocks[i].action == "addjump"){
             if(x < blocks[i].x + 50 && x + 50 > blocks[i].x && y < blocks[i].y + 50 && y + 50 > blocks[i].y){
+                if (jumps == 0 && airJumps == 0) {
+                    keys[2] = false;
+                }
                 jumps ++;
                 setJumps();
                 blocks[i].action = NaN;
@@ -382,6 +522,9 @@ function checkCollision(){
         }
         if(blocks[i].action == "addairjump"){
             if(x < blocks[i].x + 50 && x + 50 > blocks[i].x && y < blocks[i].y + 50 && y + 50 > blocks[i].y){
+                if (airJumps == 0) {
+                    keys[2] = false;
+                }
                 airJumps ++;
                 setJumps();
                 blocks[i].action = NaN;
@@ -399,7 +542,8 @@ function checkCollision(){
     }
 }
 setInterval(function(){
-    game.style.transform = `translate3d(${window.innerWidth / 2 - 25 - x}px, ${window.innerHeight / 2 - 25 - y}px, 0)`
+    root.style.setProperty('--x', `${window.innerWidth / 2 - 25 - x}px`);
+    root.style.setProperty('--y', `${window.innerHeight / 2 - 25 - y}px`);
 
     x += sx;
     y += sy;
@@ -423,6 +567,10 @@ setInterval(function(){
                 airjumpable = false;
                 setJumps();
                 onblock = false;
+                player.classList.add("jump");
+                setTimeout(function(){
+                    player.classList.remove("jump");
+                }, 500);
             }
             else if(airJumps > 0){
                 airJumps --;
@@ -430,6 +578,10 @@ setInterval(function(){
                 airjumpable = false;
                 setJumps();
                 onblock = false;
+                player.classList.add("jump");
+                setTimeout(function () {
+                    player.classList.remove("jump");
+                }, 500);
             }
         } else if(airJumps > 0 && airjumpable) {
             airJumps --;
@@ -437,11 +589,33 @@ setInterval(function(){
             airjumpable = false;
             setJumps();
             onblock = false;
+            player.classList.add("jump");
+            setTimeout(function () {
+                player.classList.remove("jump");
+            }, 500);
         }
     } else {
         onblock = false;
     }
-    if(y > levels[level].length * 50 + 500){
-        setLevel();
+    if(y > levels[level].length * 50 + 500 && !dead){
+        player.style.animation = "death 1s ease-out";
+        gravity = 0;
+        sx = 0;
+        sy = 0;
+        dead = true;
+        keys = [false, false, false];
+        setTimeout(function(){setLevel();}, 1000);
+        
     }
 }, 1000/60);
+function repeatTimes(func, times, speed = 1000/60){
+    let timesLeft = times;
+    let interval = setInterval(function(){
+        if(timesLeft > 0){
+            func();
+            timesLeft--;
+        } else {
+            clearInterval(interval);
+        }
+    }, speed);
+}
